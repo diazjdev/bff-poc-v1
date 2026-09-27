@@ -1,0 +1,22 @@
+node_modules/
+dist/
+.angular/
+
+# Secrets: ignore real env files, keep the committed examples
+.env
+.env.*
+!.env.example
+
+# Keys, certs and secret material
+*.pem
+*.key
+*.pfx
+*.p12
+*.jks
+secrets/
+*.local
+
+# Logs and editor noise
+*.log
+.DS_Store
+Thumbs.db

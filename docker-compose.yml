@@ -1,0 +1,57 @@
+version: "3.8"
+
+services:
+  auth-service:
+    build: ./auth-service
+    ports:
+      - "3001:3001"
+    env_file:
+      - ./auth-service/.env
+    environment:
+      - NODE_ENV=development
+      - CLIENT_ORIGIN=http://localhost:4200
+    networks:
+      - bff-network
+
+  bff:
+    build: ./bff
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./bff/.env
+    environment:
+      - NODE_ENV=development
+      - CORS_ORIGIN=http://localhost:4200
+      # Overrides bff/.env: inside the compose network the auth service is
+      # reachable by service name, not localhost. Keep bff/.env on
+      # http://localhost:3001 so `npm run dev` still works outside Docker.
+      - AUTH_SERVICE_URL=http://auth-service:3001
+      - DOWNSTREAM_API_URL=http://downstream-api:4000
+    depends_on:
+      - auth-service
+      - downstream-api
+    networks:
+      - bff-network
+
+  downstream-api:
+    build: ./downstream-api
+    ports:
+      - "4000:4000"
+    environment:
+      - NODE_ENV=development
+    networks:
+      - bff-network
+
+  angular-app:
+    build: ./angular-app
+    ports:
+      - "4200:80"
+    depends_on:
+      - bff
+      - auth-service
+    networks:
+      - bff-network
+
+networks:
+  bff-network:
+    driver: bridge

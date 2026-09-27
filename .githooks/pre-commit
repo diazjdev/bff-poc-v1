@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+# Blocks commits that contain secrets.
+# Install: git config core.hooksPath .githooks
+# Bypass (only if you are certain): git commit --no-verify
+
+set -uo pipefail
+
+staged=$(git diff --cached --name-only --diff-filter=ACMR)
+if [ -z "$staged" ]; then
+  exit 0
+fi
+
+# 1. Preferred: gitleaks, if installed
+if command -v gitleaks >/dev/null 2>&1; then
+  gitleaks protect --staged --redact --no-banner
+  exit $?
+fi
+
+# 2. Fallback: pattern scan of staged content.
+#    Catches the common cases; gitleaks is the real guard.
+
+# Tier A: unambiguous credentials, flagged anywhere in the file.
+strong='BEGIN (RSA|EC|DSA|OPENSSH|PGP) PRIVATE KEY|AKIA[0-9A-Z]{16}|ASIA[0-9A-Z]{16}|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|xox[abposr]-[A-Za-z0-9-]{10,}|eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}'
+
+# Tier B: keyword + literal value. Only real literals are flagged, so
+# assignments like `req.accessToken = data.accessToken` stay allowed.
+keyword='(secret|passwd|password|passphrase|api[_-]?key|private[_-]?key|client[_-]?secret|access[_-]?key|credentials?|auth[_-]?token|api[_-]?token|refresh[_-]?token|bearer)'
+quoted="[^[:space:]]*[[:space:]]*[:=][[:space:]]*['\"][^'\"]{8,}['\"]"
+mixedcase="[^[:space:]]*[[:space:]]*[:=][[:space:]]*[A-Za-z0-9_@+./-]*[0-9][A-Za-z0-9_@+./-]*[A-Za-z][A-Za-z0-9_@+./-]*"
+
+# Obvious non-secrets, dropped from the Tier B report.
+allowlist='\.example|process\.env|\benv\.|placeholder|changeme|your[-_ ]|example\.(com|org|net)|xxx+|\bdummy\b|\bfake\b|\bTODO\b|getenv|\$\{'
+
+leaks=0
+for file in $staged; do
+  content=$(git cat-file -p ":$file" 2>/dev/null)
+  # Skip anything git considers binary.
+  printf '%s' "$content" | LC_ALL=C grep -Iq . || continue
+
+  hits=$(printf '%s' "$content" \
+    | LC_ALL=C grep -nE "$strong" \
+    | LC_ALL=C grep -vEi "$allowlist")
+  hits="$hits
+$(printf '%s' "$content" \
+    | LC_ALL=C grep -nEi "$keyword[[:space:]]*[:=][[:space:]]*($quoted|$mixedcase)" \
+    | LC_ALL=C grep -vEi "$allowlist")"
+
+  hits=$(printf '%s' "$hits" | grep -v '^[[:space:]]*$')
+  if [ -n "$hits" ]; then
+    echo "pre-commit: possible secret in $file"
+    printf '%s\n' "$hits" | sed 's/^/  /'
+    leaks=1
+  fi
+done
+
+if [ "$leaks" -ne 0 ]; then
+  echo
+  echo "Commit blocked. Fix the lines above, or move real values into a .env file"
+  echo "(keep .env.example in git). Install gitleaks for stronger checks:"
+  echo "  winget install Gitleaks.Gitleaks   # or: brew install gitleaks"
+  exit 1
+fi
+
+exit 0

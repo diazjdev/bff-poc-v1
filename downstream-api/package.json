@@ -1,0 +1,16 @@
+{
+  "name": "downstream-api",
+  "version": "1.0.0",
+  "description": "Stub downstream API for the BFF POC - in-memory data, no persistence",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}
