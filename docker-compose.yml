@@ -43,6 +43,27 @@ services:
       - bff-network
 
   angular-app:
+    build:
+      context: ./angular-app
+      dockerfile: Dockerfile.dev
+    ports:
+      - "4200:4200"
+    # Bind mounts the watched sources so `ng serve` rebuilds and live-reloads
+    # on every edit. node_modules, tsconfig and package.json come from the image
+    # and need a rebuild when they change.
+    volumes:
+      - ./angular-app/src:/app/src
+      - ./angular-app/angular.json:/app/angular.json
+    depends_on:
+      - bff
+      - auth-service
+    networks:
+      - bff-network
+
+  # Production bundle served by nginx. Start with:
+  #   docker compose --profile prod up --build angular-app-prod
+  angular-app-prod:
+    profiles: ["prod"]
     build: ./angular-app
     ports:
       - "4200:80"

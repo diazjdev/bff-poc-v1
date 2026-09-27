@@ -12,7 +12,7 @@ import { AuthService } from "../auth.service";
       <mat-card-header>
         <mat-card-title>Login</mat-card-title>
         <mat-card-subtitle>Sign in with Auth0</mat-card-subtitle>
-      </mat-card-headerg
+      </mat-card-header>
       <mat-card-content>
         <p>Click the button below to login with Auth0.</p>
       </mat-card-content>

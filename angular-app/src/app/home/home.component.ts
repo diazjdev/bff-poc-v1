@@ -1,8 +1,8 @@
-import { Component, inject } from "@angular/core";
-import { MatCardModule } from "@angular/material/card";
-import { MatButtonModule } from "@angular/material/button";
-import { RouterLink } from "@angular/router";
 import { AsyncPipe } from "@angular/common";
+import { Component, inject } from "@angular/core";
+import { MatButtonModule } from "@angular/material/button";
+import { MatCardModule } from "@angular/material/card";
+import { RouterLink } from "@angular/router";
 import { AuthService } from "../auth/auth.service";
 
 @Component({
@@ -25,9 +25,13 @@ import { AuthService } from "../auth/auth.service";
       </mat-card-content>
       <mat-card-actions>
         @if (auth.isAuthenticated$ | async) {
-          <a mat-raised-button color="primary" routerLink="/dashboard">Go to Dashboard</a>
+          <a mat-raised-button color="primary" routerLink="/dashboard"
+            >Go to Dashboard</a
+          >
         } @else {
-          <a mat-raised-button color="primary" routerLink="/login">Login with Auth0</a>
+          <a mat-raised-button color="primary" routerLink="/login"
+            >Login with Auth0</a
+          >
         }
       </mat-card-actions>
     </mat-card>

@@ -63,8 +63,24 @@ cp bff/.env.example bff/.env
 
 # Edit .env files with your Auth0 credentials
 
-docker-compose up --build
+docker compose up --build
 ```
+
+The Angular service runs `ng serve` inside the container with `src` bind
+mounted, so editing anything under `angular-app/src` rebuilds and live-reloads
+the browser at http://localhost:4200 automatically.
+
+Notes:
+
+- `package.json`, `tsconfig.json` and `node_modules` are baked into the image,
+  so dependency changes need `docker compose up --build angular-app`.
+- `angular.json` is bind mounted but read at startup, so changes to it need a
+  container restart.
+- Serving the production bundle instead of the dev server:
+
+  ```bash
+  docker compose --profile prod up --build angular-app-prod
+  ```
 
 ## Auth0 Configuration
 
